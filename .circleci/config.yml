@@ -17,3 +17,22 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
             make lint
+
+            
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build:
+          context: circleci-user
+  build_daily:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build:
+          context: circleci-user
