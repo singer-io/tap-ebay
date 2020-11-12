@@ -12,6 +12,12 @@ setup(name='tap-ebay',
       install_requires=[
           'tap-framework==0.1.1',
       ],
+      extras_require={
+        'dev': [
+            'ipdb==0.11',
+            'pylint==2.4.4',
+        ]
+      },
       entry_points='''
           [console_scripts]
           tap-ebay=tap_ebay:main
