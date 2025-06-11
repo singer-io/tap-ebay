@@ -4,9 +4,6 @@ import singer
 import singer.utils
 import singer.metrics
 from singer import metadata as meta
-from dateutil.parser import parse
-from tap_ebay.config import get_config_start_date
-from tap_ebay.state import incorporate, save_state, get_last_record_value_for_table
 
 
 LOGGER = singer.get_logger()
@@ -156,22 +153,24 @@ class Base:
 
 
 class BaseStream(Base):
-    KEY_PROPERTIES = ["id"]
+    KEY_PROPERTIES = ['id']
 
     def get_url(self):
-        return "https://api.ebay.com{}".format(self.path)
+        return 'https://api.ebay.com{}'.format(self.path)
 
     def get_schema(self):
         schema = self.load_schema_by_name(self.TABLE)
         return singer.resolve_schema_references(schema, None)
 
     def get_filter(self, start_date):
-        return "lastmodifieddate:[{}..]".format(
-            start_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-        )
+        return 'lastmodifieddate:[{}..]'.format(start_date.strftime('%Y-%m-%dT%H:%M:%S.000Z'))
 
     def get_params(self, start_date, offset, limit):
-        return {"filter": self.get_filter(start_date), "limit": limit, "offset": offset}
+        return {
+            'filter': self.get_filter(start_date),
+            'limit': limit,
+            'offset': offset
+        }
 
     def get_stream_data(self, result):
         return [self.transform_record(record) for record in result]
