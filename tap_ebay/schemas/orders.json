@@ -1,5 +1,5 @@
 {
-    "type": "object",
+    "type":["object", "null"],
     "properties": {
         "buyer": {
             "$ref": "#/definitions/Buyer"
@@ -14,7 +14,7 @@
             "type": ["string", "null"]
         },
         "ebayCollectAndRemitTax": {
-            "type": "boolean"
+            "type": ["boolean", "null"]
         },
         "fulfillmentHrefs": {
             "type": "array",
@@ -64,7 +64,7 @@
     },
     "definitions": {
         "Address": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "addressLine1": {
                     "type": ["string", "null"]
@@ -90,7 +90,7 @@
             }
         },
         "Amount": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "convertedFromCurrency": {
                     "type": ["string", "null"]
@@ -107,7 +107,7 @@
             }
         },
         "AppliedPromotion": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "description": {
                     "type": ["string", "null"]
@@ -121,7 +121,7 @@
             }
         },
         "Buyer": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "username": {
                     "type": ["string", "null"]
@@ -129,7 +129,7 @@
             }
         },
         "CancelRequest": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "cancelCompletedDate": {
                     "type": ["string", "null"]
@@ -152,7 +152,7 @@
             }
         },
         "CancelStatus": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "cancelledDate": {
                     "type": ["string", "null"]
@@ -169,7 +169,7 @@
             }
         },
         "DeliveryCost": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "importCharges": {
                     "$ref": "#/definitions/Amount"
@@ -183,7 +183,7 @@
             }
         },
         "EbayCollectAndRemitTax": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "amount": {
                     "$ref": "#/definitions/Amount"
@@ -194,7 +194,7 @@
             }
         },
         "Error": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "category": {
                     "type": ["string", "null"]
@@ -235,7 +235,7 @@
             }
         },
         "ErrorParameter": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "name": {
                     "type": ["string", "null"]
@@ -246,7 +246,7 @@
             }
         },
         "ExtendedContact": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "companyName": {
                     "type": ["string", "null"]
@@ -266,7 +266,7 @@
             }
         },
         "FulfillmentStartInstruction": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "ebaySupportedFulfillment": {
                     "type": ["boolean", "null"]
@@ -292,7 +292,7 @@
             }
         },
         "GiftDetails": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "message": {
                     "type": ["string", "null"]
@@ -306,7 +306,7 @@
             }
         },
         "LineItem": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "appliedPromotions": {
                     "type": "array",
@@ -386,7 +386,7 @@
             }
         },
         "LineItemFulfillmentInstructions": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "guaranteedDelivery": {
                     "type": ["boolean", "null"]
@@ -403,7 +403,7 @@
             }
         },
         "LineItemProperties": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "buyerProtection": {
                     "type": ["boolean", "null"]
@@ -417,7 +417,7 @@
             }
         },
         "LineItemReference": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "lineItemId": {
                     "type": ["string", "null"]
@@ -428,7 +428,7 @@
             }
         },
         "LineItemRefund": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "amount": {
                     "$ref": "#/definitions/Amount"
@@ -442,7 +442,7 @@
             }
         },
         "OrderRefund": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "amount": {
                     "$ref": "#/definitions/Amount"
@@ -459,7 +459,7 @@
             }
         },
         "Payment": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "amount": {
                     "$ref": "#/definitions/Amount"
@@ -485,7 +485,7 @@
             }
         },
         "PaymentHold": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "expectedReleaseDate": {
                     "type": ["string", "null"]
@@ -511,7 +511,7 @@
             }
         },
         "PaymentSummary": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "payments": {
                     "type": "array",
@@ -531,7 +531,7 @@
             }
         },
         "PhoneNumber": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "phoneNumber": {
                     "type": ["string", "null"]
@@ -539,7 +539,7 @@
             }
         },
         "PickupStep": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "merchantLocationKey": {
                     "type": ["string", "null"]
@@ -547,7 +547,7 @@
             }
         },
         "PricingSummary": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "adjustment": {
                     "$ref": "#/definitions/Amount"
@@ -576,7 +576,7 @@
             }
         },
         "SellerActionsToRelease": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "sellerActionToRelease": {
                     "type": ["string", "null"]
@@ -584,7 +584,7 @@
             }
         },
         "ShippingFulfillment": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "fulfillmentId": {
                     "type": ["string", "null"]
@@ -607,7 +607,7 @@
             }
         },
         "ShippingFulfillmentDetails": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "lineItems": {
                     "type": "array",
@@ -627,7 +627,7 @@
             }
         },
         "ShippingFulfillmentPagedCollection": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "fulfillments": {
                     "type": "array",
@@ -647,7 +647,7 @@
             }
         },
         "ShippingStep": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "shippingCarrierCode": {
                     "type": ["string", "null"]
@@ -664,7 +664,7 @@
             }
         },
         "Tax": {
-            "type": "object",
+            "type":["object", "null"],
             "properties": {
                 "amount": {
                     "$ref": "#/definitions/Amount"
