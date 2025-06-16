@@ -10,12 +10,10 @@ setup(name='tap-ebay',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       py_modules=['tap_ebay'],
       install_requires=[
-        "singer-python==6.1.1",
-        "backoff==2.2.1",
-        "requests==2.32.3",
-        "requests-oauthlib==2.0.0",
-        "funcy==2.0",
-    ],
+          "singer-python==6.1.1",
+          "backoff==2.2.1",
+          "requests==2.32.3"
+      ],
       extras_require={
         'dev': [
             'ipdb==0.11',
