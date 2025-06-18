@@ -8,11 +8,9 @@ import singer.metrics
 import time
 
 
-
 LOGGER = singer.get_logger()  # noqa
 
 AUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
-
 
 
 class Server5xxError(Exception):
@@ -69,7 +67,6 @@ class EbayClient:
     )
     def make_request(self, AUTH_URL, method, params=None, body=None):
 
-
         LOGGER.info("Making {} request to {}".format(method, AUTH_URL))
 
         resp = requests.request(
@@ -82,13 +79,8 @@ class EbayClient:
             params=params,
             json=body,
         )
-
         if resp.status_code >= 500 and resp.status_code < 600:
             raise Server5xxError()
-
         elif resp.status_code != 200:
             raise RuntimeError(resp.text)
-
         return resp.json()
-
-
