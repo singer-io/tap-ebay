@@ -9,8 +9,6 @@ import time
 
 
 
-DEFAULT_RETRY_RATE_LIMIT = 360
-
 LOGGER = singer.get_logger()  # noqa
 
 AUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
@@ -21,15 +19,10 @@ class Server5xxError(Exception):
     pass
 
 
-class Server429Error(Exception):
-    pass
-
-
 class EbayClient:
 
     def __init__(self, config):
         self.config = config
-        self._retry_after = DEFAULT_RETRY_RATE_LIMIT
         self.access_token = self.authorize()
 
     def authorize(self):
@@ -66,54 +59,36 @@ class EbayClient:
         return response.json()['access_token']
 
 
-    def _rate_limit_backoff(self):
-        """
-        Bound wait‐generator: on each retry backoff will call next()
-        and sleep for self._retry_after seconds.
-        """
-        while True:
-            yield self._retry_after
-
+    # The below implementation does not have the Retry logic since the Ebay Orders API
+    # endpoint have 24 hours Quota of 100,000 calls , Retry is not supported
+    # Reference - https://developer.ebay.com/develop/get-started/api-call-limits
+    @backoff.on_exception(
+        backoff.expo,
+        (ConnectionError, Server5xxError),
+        max_tries=5,
+    )
     def make_request(self, AUTH_URL, method, params=None, body=None):
-        @backoff.on_exception(
-            self._rate_limit_backoff,
-            Server429Error,
-            max_tries=5,
-            jitter=None,
+
+
+        LOGGER.info("Making {} request to {}".format(method, AUTH_URL))
+
+        resp = requests.request(
+            method,
+            AUTH_URL,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Bearer {}".format(self.access_token),
+            },
+            params=params,
+            json=body,
         )
-        @backoff.on_exception(
-            backoff.expo,
-            (ConnectionError, Server5xxError),
-            max_tries=5,
-        )
-        def _call():
-            LOGGER.info("Making {} request to {}".format(method, AUTH_URL))
 
-            resp = requests.request(
-                method,
-                AUTH_URL,
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer {}".format(self.access_token),
-                },
-                params=params,
-                json=body,
-            )
+        if resp.status_code >= 500 and resp.status_code < 600:
+            raise Server5xxError()
 
-            if resp.status_code >= 500 and resp.status_code < 600:
-                raise Server5xxError()
-            elif resp.status_code == 429:
-                try:
-                    self._retry_after = int(
-                        float(resp.headers.get("X-EBAY-C-RATE-LIMIT", DEFAULT_RETRY_RATE_LIMIT))
-                    )
-                except (TypeError, ValueError):
-                    self._retry_after = DEFAULT_RETRY_RATE_LIMIT
-                raise Server429Error()
-            elif resp.status_code != 200:
-                raise RuntimeError(resp.text)
+        elif resp.status_code != 200:
+            raise RuntimeError(resp.text)
 
-            return resp
+        return resp.json()
 
-        response = _call()
-        return response.json()
+

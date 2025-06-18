@@ -3,10 +3,8 @@ from unittest.mock import patch, MagicMock
 import requests
 from tap_ebay.client import (
     EbayClient,
-    Server429Error,
     Server5xxError,
 )
-
 
 from unittest.mock import patch
 
@@ -15,13 +13,9 @@ class BaseTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls._patcher = patch("tap_ebay.client.DEFAULT_RETRY_RATE_LIMIT")
-        cls.mocked_DEFAULT_RETRY_RATE_LIMIT = cls._patcher.start()
-        cls.mocked_DEFAULT_RETRY_RATE_LIMIT.return_value = 1
 
     @classmethod
     def tearDownClass(cls):
-        cls._patcher.stop()
         super().tearDownClass()
 
 
@@ -73,27 +67,7 @@ class TestEbayClient(BaseTestCase):
 
             self.assertGreaterEqual(mock_request.call_count, 2)
 
-    @patch("tap_ebay.client.EbayClient.refresh_access_token")
-    def test_make_request_rate_limit_429_retry(
-        self,  mock_refresh_token
-    ):
-        """
-        Test that make_request raises Server429Error and retries when
-        the response status code is 429 (rate limit exceeded).
-        Verifies that exponential backoff retry logic is triggered.
-        """
-        mock_refresh_token.return_value = "dummy_refresh_token"
-        client = EbayClient(self.config)
 
-        with patch("requests.request") as mock_request:
-            mock_response = MagicMock()
-            mock_response.status_code = 429
-            mock_request.return_value = mock_response
-
-            with self.assertRaises(Server429Error):
-                client.make_request("https://dummy-url.com", "GET")
-
-            self.assertGreaterEqual(mock_request.call_count, 2)
 
     @patch("tap_ebay.client.EbayClient.refresh_access_token")
     def test_make_request_raises_runtime_error_for_other_errors(
@@ -202,100 +176,3 @@ class TestEbayClient(BaseTestCase):
             with self.assertRaises(Server5xxError):
                 client.make_request("https://dummy-url.com", "GET")
             self.assertEqual(mock_request.call_count, 5)
-
-    @patch("tap_ebay.client.EbayClient.refresh_access_token")
-    def test_make_request_max_retries_reached_for_Server429Error(
-        self,  mock_refresh_token
-    ):
-        """
-        Test that make_request raises Server429Error after exceeding maximum retry attempts.
-        """
-        mock_refresh_token.return_value = "dummy_refresh_token"
-        client = EbayClient(self.config)
-
-        with patch("requests.request") as mock_request:
-            error_response = MagicMock()
-            error_response.status_code = 429
-
-            mock_request.side_effect = [error_response] * 6
-
-            with self.assertRaises(Server429Error):
-                client.make_request("https://dummy-url.com", "GET")
-            self.assertEqual(mock_request.call_count, 5)
-
-    @patch("tap_ebay.client.EbayClient.refresh_access_token")
-    @patch("tap_ebay.client.EbayClient._rate_limit_backoff")
-    def test_make_request_429_with_valid_retry_after(
-        self,
-        mock_rate_limit_backoff,
-        mock_refresh_token,
-    ):
-        """
-        Test that make_request respects the retry_after value from X-RateLimit-Reset header
-        when handling Server429Error.
-        """
-        mock_refresh_token.return_value = "dummy_refresh_token"
-        client = EbayClient(self.config)
-
-        with patch("requests.request") as mock_request:
-            error_response = MagicMock()
-            error_response.status_code = 429
-            error_response.headers = {"X-RateLimit-Reset": "10"}
-
-            mock_request.side_effect = [error_response] + [
-                MagicMock(status_code=200, json=lambda: {"data": "ok"})
-            ]
-
-            result = client.make_request("https://dummy-url.com", "GET")
-            self.assertEqual(result, {"data": "ok"})
-            self.assertEqual(mock_request.call_count, 2)
-            mock_rate_limit_backoff.assert_called_once()
-
-    @patch("tap_ebay.client.EbayClient.refresh_access_token")
-    def test_make_request_429_missing_retry_after(
-        self, mock_get_timezone, mock_refresh_token
-    ):
-        """
-        Test that make_request uses default retry_after when X-RateLimit-Reset header
-        is missing for Server429Error
-        """
-        mock_refresh_token.return_value = "dummy_refresh_token"
-        client = EbayClient(self.config)
-
-        with patch("requests.request") as mock_request:
-            error_response = MagicMock()
-            error_response.status_code = 429
-            error_response.headers = {}
-
-            mock_request.side_effect = [error_response] * 2 + [
-                MagicMock(status_code=200, json=lambda: {"data": "ok"})
-            ]
-
-            result = client.make_request("https://dummy-url.com", "GET")
-            self.assertEqual(result, {"data": "ok"})
-            self.assertEqual(mock_request.call_count, 3)
-
-    @patch("tap_ebay.client.EbayClient.refresh_access_token")
-    def test_make_request_429_invalid_retry_after(
-        self, mock_get_timezone, mock_refresh_token
-    ):
-        """
-        Test that make_request sets retry_after to None when X-RateLimit-Reset header
-        contains an invalid value for Server429Error.
-        """
-        mock_refresh_token.return_value = "dummy_refresh_token"
-        client = EbayClient(self.config)
-
-        with patch("requests.request") as mock_request:
-            error_response = MagicMock()
-            error_response.status_code = 429
-            error_response.headers = {"X-RateLimit-Reset": "invalid"}
-
-            mock_request.side_effect = [error_response] * 2 + [
-                MagicMock(status_code=200, json=lambda: {"data": "ok"})
-            ]
-
-            result = client.make_request("https://dummy-url.com", "GET")
-            self.assertEqual(result, {"data": "ok"})
-            self.assertEqual(mock_request.call_count, 3)
-
