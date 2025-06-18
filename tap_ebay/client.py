@@ -9,7 +9,7 @@ import time
 
 
 
-RETRY_RATE_LIMIT = 360
+DEFAULT_RETRY_RATE_LIMIT = 360
 
 LOGGER = singer.get_logger()  # noqa
 
@@ -29,7 +29,7 @@ class EbayClient:
 
     def __init__(self, config):
         self.config = config
-        self._retry_after = RETRY_RATE_LIMIT
+        self._retry_after = DEFAULT_RETRY_RATE_LIMIT
         self.access_token = self.authorize()
 
     def authorize(self):
@@ -105,10 +105,10 @@ class EbayClient:
             elif resp.status_code == 429:
                 try:
                     self._retry_after = int(
-                        float(resp.headers.get("X-EBAY-C-RATE-LIMIT", RETRY_RATE_LIMIT))
+                        float(resp.headers.get("X-EBAY-C-RATE-LIMIT", DEFAULT_RETRY_RATE_LIMIT))
                     )
                 except (TypeError, ValueError):
-                    self._retry_after = RETRY_RATE_LIMIT
+                    self._retry_after = DEFAULT_RETRY_RATE_LIMIT
                 raise Server429Error()
             elif resp.status_code != 200:
                 raise RuntimeError(resp.text)
