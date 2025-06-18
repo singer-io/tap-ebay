@@ -11,7 +11,7 @@ from tap_ebay.state import save_state
 
 LOGGER = singer.get_logger()  # noqa
 
-CONFIG_KEYS = ["client_id", "client_secret", "refresh_token", "scope", "start_date"]
+CONFIG_KEYS = ["client_id", "client_secret", "refresh_token", "scope", "start_date", "user_agent"]
 
 
 class EbayRunner:
@@ -95,7 +95,6 @@ class EbayRunner:
 
 @singer.utils.handle_top_exception(LOGGER)
 def main():
-
     args = singer.utils.parse_args(required_config_keys=CONFIG_KEYS)
     client = EbayClient(args.config)
     runner = EbayRunner(args, client, AVAILABLE_STREAMS)
