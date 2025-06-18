@@ -26,9 +26,6 @@ class EbayRunner:
     def get_streams_to_replicate(self):
         streams = []
 
-        if not self.catalog:
-            return streams
-
         for stream_catalog in self.catalog.streams:
             if not is_stream_selected(stream_catalog):
                 LOGGER.info(
@@ -42,7 +39,7 @@ class EbayRunner:
                 if available_stream.matches_catalog(stream_catalog):
                     if not available_stream.requirements_met(self.catalog):
                         raise RuntimeError(
-                            "{} requires that that the following are "
+                            "{} requires that the following are "
                             "selected: {}".format(
                                 stream_catalog.stream,
                                 ",".join(available_stream.REQUIRES),
