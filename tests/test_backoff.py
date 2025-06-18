@@ -15,9 +15,9 @@ class BaseTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls._patcher = patch("tap_ebay.client.RETRY_RATE_LIMIT")
-        cls.mocked_retry_rate_limit = cls._patcher.start()
-        cls.mocked_retry_rate_limit.return_value = 1
+        cls._patcher = patch("tap_ebay.client.DEFAULT_RETRY_RATE_LIMIT")
+        cls.mocked_DEFAULT_RETRY_RATE_LIMIT = cls._patcher.start()
+        cls.mocked_DEFAULT_RETRY_RATE_LIMIT.return_value = 1
 
     @classmethod
     def tearDownClass(cls):
@@ -299,21 +299,3 @@ class TestEbayClient(BaseTestCase):
             self.assertEqual(result, {"data": "ok"})
             self.assertEqual(mock_request.call_count, 3)
 
-    @patch("tap_ebay.client.EbayClient.refresh_access_token")
-    def test_rate_limit_backoff_generator(self, mock_refresh_token):
-        """
-        Test that the custom backoff generator `_rate_limit_backoff` yields the most recent
-        `retry_after` value set on the EbayClient instance. Ensures that the
-        generator dynamically reflects updates to the `_retry_after` attribute.
-        """
-        mock_refresh_token.return_value = "dummy_refresh_token"
-        client = EbayClient(self.config)
-
-        # manually set retry_after and test generator
-        client._retry_after = 7
-        gen = client._rate_limit_backoff()
-        self.assertEqual(next(gen), 7)
-
-        # change retry_after and test again
-        client._retry_after = 10
-        self.assertEqual(next(gen), 10)
