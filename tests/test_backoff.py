@@ -8,8 +8,10 @@ AUTH_URL = "https://fake-api.ebay.com/identity/v1/oauth2/token"
 
 
 class TestEbayClient(unittest.TestCase):
-
     def setUp(self):
+        """
+        Set up a mocked EbayClient instance with fake config and patched HTTP requests.
+        """
         self.config = {
             'client_id': 'fake_id',
             'client_secret': 'fake_secret',
@@ -25,12 +27,15 @@ class TestEbayClient(unittest.TestCase):
 
         mock_response = mock.Mock()
         mock_response.raise_for_status.return_value = None
-        mock_response.json.return_value = {"access_token": "fake_access_token"}
+        mock_response.json.return_value = {"token": "fake_access_token"}
         self.mock_request.return_value = mock_response
 
         self.client = EbayClient(self.config)
 
     def test_make_request_success(self):
+        """
+        Test that a successful 200 OK response returns the expected JSON payload.
+        """
         mock_response = mock.Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"result": "ok"}
@@ -40,6 +45,9 @@ class TestEbayClient(unittest.TestCase):
         self.assertEqual(result, {"result": "ok"})
 
     def test_make_request_5xx_retries(self):
+        """
+        Test that 5xx server errors trigger retries and eventually raise Server5xxError.
+        """
         error_response = mock.Mock()
         error_response.status_code = 502
         self.mock_request.side_effect = [error_response] * 5
@@ -50,6 +58,9 @@ class TestEbayClient(unittest.TestCase):
         self.assertEqual(self.mock_request.call_count, 6)
 
     def test_make_request_non_200_raises_runtime_error(self):
+        """
+        Test that non-200 non-5xx responses raise a RuntimeError with error message.
+        """
         error_response = mock.Mock()
         error_response.status_code = 403
         error_response.text = "Forbidden"
@@ -60,6 +71,9 @@ class TestEbayClient(unittest.TestCase):
         self.assertIn("Forbidden", str(context.exception))
 
     def test_make_request_with_params_and_body(self):
+        """
+        Test that query parameters and JSON body are correctly passed to the request.
+        """
         mock_response = mock.Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"result": "ok"}
@@ -78,6 +92,9 @@ class TestEbayClient(unittest.TestCase):
         self.assertEqual(kwargs["json"], {"key": "value"})
 
     def test_make_request_connection_error_retries(self):
+        """
+        Test that ConnectionError triggers retries and is eventually raised.
+        """
         self.mock_request.side_effect = ConnectionError("Temporary network issue")
 
         with self.assertRaises(ConnectionError):
@@ -86,6 +103,9 @@ class TestEbayClient(unittest.TestCase):
         self.assertEqual(self.mock_request.call_count, 6)
 
     def test_authorize_sets_access_token(self):
+        """
+        Test that the authorize method sets the access token from the response.
+        """
         # Re-patch just for this isolated test
         with mock.patch("requests.request") as mock_req:
             mock_response = mock.Mock()
@@ -94,4 +114,4 @@ class TestEbayClient(unittest.TestCase):
             mock_req.return_value = mock_response
 
             client = EbayClient(self.config)
-            self.assertEqual(client.token, "mock_token")
+            self.assertEqual(client.access_token, "mock_token")

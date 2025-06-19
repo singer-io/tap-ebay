@@ -21,6 +21,7 @@ class EbayClient:
 
     def __init__(self, config):
         self.config = config
+        self.token = None
         self.access_token = self.authorize()
 
     def authorize(self):
@@ -49,12 +50,6 @@ class EbayClient:
         data = response.json()
 
         self.token = data['access_token']
-
-    def refresh_access_token(self):
-        LOGGER.info("Refreshing access token")
-        data = {'grant_type': 'refresh_token', 'refresh_token': self.config['refresh_token']}
-        response = requests.request("POST", AUTH_URL, data=data)
-        return response.json()['access_token']
 
 
     # The below implementation does not have the Retry logic since the Ebay Orders API
