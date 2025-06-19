@@ -52,8 +52,8 @@ class EbayClient:
         self.token = data['access_token']
 
 
-    # The below implementation does not have the Retry logic since the Ebay Orders API
-    # endpoint have 24 hours Quota of 100,000 calls , Retry is not supported
+    # The below Implementation does not have the Retry logic since the Ebay Orders API
+    # Endpoint have 24 hours Quota of 100,000 calls , Retry is not supported
     # Reference - https://developer.ebay.com/develop/get-started/api-call-limits
     @backoff.on_exception(
         backoff.expo,
