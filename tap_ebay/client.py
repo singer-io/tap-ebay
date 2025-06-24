@@ -30,9 +30,8 @@ class EbayClient:
         auth = base64.b64encode(client.encode()).decode()
 
         data = {
-            "grant_type": "refresh_token",
-            "scope": self.config.get('scope'),
-            "refresh_token": self.config.get('refresh_token')
+            "grant_type": "client_credentials",
+            "scope": self.config.get('scope')
         }
 
         headers = {
