@@ -21,7 +21,6 @@ class EbayClient:
 
     def __init__(self, config):
         self.config = config
-        self.token = None
         self.access_token = self.authorize()
 
     def authorize(self):
@@ -49,7 +48,7 @@ class EbayClient:
         response.raise_for_status()
         data = response.json()
 
-        self.token = data['access_token']
+        return data['access_token']
 
 
     # The below Implementation does not have the Retry logic since the Ebay Orders API
@@ -68,8 +67,9 @@ class EbayClient:
             method,
             AUTH_URL,
             headers={
-                "Content-Type": "application/json",
-                "Authorization": "Bearer {}".format(self.access_token),
+                'Authorization': "Bearer {}".format(self.access_token),
+                'Content-Type': 'application/json',
+                'User-Agent': self.config.get('user_agent')
             },
             params=params,
             json=body,
