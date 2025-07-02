@@ -100,7 +100,8 @@ class EbayRunner:
 def main():
     args = singer.utils.parse_args(required_config_keys=CONFIG_KEYS)
     client = EbayClient(args.config)
-    runner = EbayRunner(args, client, AVAILABLE_STREAMS)
+    runner = EbayRunner(
+        args, client, AVAILABLE_STREAMS)
 
     if args.discover:
         runner.do_discover()
