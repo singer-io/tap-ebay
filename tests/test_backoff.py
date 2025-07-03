@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 from requests.exceptions import ConnectionError
-from tap_ebay.client import EbayClient, Server5xxError  # Replace with your actual module name
+from tap_ebay.client import EbayClient, Server5xxError
 
 
 AUTH_URL = "https://fake-api.ebay.com/identity/v1/oauth2/token"
