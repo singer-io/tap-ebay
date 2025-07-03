@@ -74,7 +74,7 @@ class EbayClient:
             params=params,
             json=body,
         )
-        if resp.status_code >= 500 and resp.status_code < 600:
+        if 500 <= resp.status_code < 600:
             raise Server5xxError()
         elif resp.status_code != 200:
             raise RuntimeError(resp.text)
