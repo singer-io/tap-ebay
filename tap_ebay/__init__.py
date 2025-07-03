@@ -51,11 +51,9 @@ class EbayRunner:
                                 ",".join(available_stream.REQUIRES),
                             )
                         )
-
                     to_add = available_stream(
                         self.config, self.state, stream_catalog, self.client
                     )
-
                     streams.append(to_add)
 
         return streams
@@ -64,10 +62,8 @@ class EbayRunner:
         LOGGER.info("Starting discovery.")
 
         catalog = []
-
         for available_stream in self.available_streams:
             stream = available_stream(self.config, self.state, None, None)
-
             catalog += stream.generate_catalog()
 
         json.dump({"streams": catalog}, sys.stdout, indent=4)
@@ -76,7 +72,6 @@ class EbayRunner:
         LOGGER.info("Starting sync.")
 
         streams = self.get_streams_to_replicate()
-
         for stream in streams:
             try:
                 stream.state = self.state
@@ -85,7 +80,6 @@ class EbayRunner:
             except OSError as e:
                 LOGGER.error(str(e))
                 exit(e.errno)
-
             except Exception as e:
                 LOGGER.error(str(e))
                 LOGGER.error(
