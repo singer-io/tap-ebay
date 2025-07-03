@@ -107,9 +107,6 @@ class Base:
 
             return tx.transform(record, self.catalog.schema.to_dict(), metadata)
 
-    def get_catalog_keys(self):
-        return list(self.catalog.schema.properties.keys())
-
     def write_schema(self):
         singer.write_schema(
             self.catalog.stream,
