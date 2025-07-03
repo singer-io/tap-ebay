@@ -9,6 +9,7 @@ class OrdersStream(BaseStream):
     API_METHOD = 'GET'
     TABLE = 'orders'
     KEY_PROPERTIES = ['orderId']
+    REPLICATION_METHOD = "FULL_TABLE"
 
     @property
     def path(self):
