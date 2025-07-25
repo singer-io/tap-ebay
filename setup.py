@@ -14,7 +14,7 @@ setup(name='tap-ebay',
       ],
       extras_require={
         'dev': [
-            'ipdb==0.11',
+            'ipdb==0.13.13',
             'pylint==2.4.4',
         ]
       },
