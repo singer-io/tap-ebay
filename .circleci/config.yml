@@ -8,7 +8,7 @@ jobs:
       - run:
           name: 'Setup virtual env'
           command: |
-            uv venv --python=3.9 /usr/local/share/virtualenvs/tap-ebay
+            uv venv --python 3.9 /usr/local/share/virtualenvs/tap-ebay
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
             uv pip install -U 'pip<19.2' 'setuptools<51.0.0'
             uv pip install .[dev]
@@ -16,7 +16,7 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
-            pylint -d 'arguments-differ,logging-format-interpolation,missing-class-docstring,missing-function-docstring,missing-module-docstring,no-member,no-self-use,too-many-arguments,unused-argument,unused-import,wrong-import-order' tap_ebay
+            pylintd_key -d 'arguments-differ,logging-format-interpolation,missing-class-docstring,missing-function-docstring,missing-module-docstring,no-member,no-self-use,too-many-arguments,unused-argument,unused-import,wrong-import-order' tap_ebay
 workflows:
   version: 2
   commit:
