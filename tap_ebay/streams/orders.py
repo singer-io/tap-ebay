@@ -25,12 +25,12 @@ class OrdersStream(BaseStream):
             for record in result['orders']
         ]
 
-    # ---- Minimal, stream-local change: force replication only for this stream
+    # Minimal, stream-level change
     def generate_catalog(self):
         entries = super().generate_catalog()   # base returns a 1-item list for this stream
         entry = entries[0]
 
-        # Convert metadata to a map, update root, write back
+        # Convert metadata to a map
         m = meta.to_map(entry["metadata"])
         root = m.get((), {})
         root["inclusion"] = root.get("inclusion", "available")
