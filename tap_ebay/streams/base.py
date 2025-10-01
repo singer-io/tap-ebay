@@ -1,3 +1,4 @@
+
 import os.path
 import inspect
 import singer
@@ -52,7 +53,7 @@ class Base:
 
     def get_stream_data(self, result):
         """
-        Given a result set from API, return the data
+        Given a result set from Campaign Monitor, return the data
         to be persisted for this stream.
         """
         raise RuntimeError("get_stream_data not implemented!")
@@ -66,6 +67,7 @@ class Base:
     @classmethod
     def requirements_met(cls, catalog):
         selected_streams = [s.stream for s in catalog.streams if is_stream_selected(s)]
+
         return set(cls.REQUIRES).issubset(selected_streams)
 
     @classmethod
@@ -76,27 +78,14 @@ class Base:
         schema = self.get_schema()
         mdata = meta.new()
 
-        # Stream-level metadata
         mdata = meta.write(mdata, (), "inclusion", "available")
 
-        # Force replication method metadata
-        replication_method = getattr(self, "REPLICATION_METHOD", None)
-        if replication_method:
-            mdata = meta.write(mdata, (), "replication-method", replication_method)
-
-        forced_method = getattr(self, "FORCED_REPLICATION_METHOD", None)
-        if forced_method:
-            mdata = meta.write(mdata, (), "forced-replication-method", forced_method)
-
-        eff_method = forced_method or replication_method
-        if eff_method == "FULL_TABLE":
-            mdata = meta.write(mdata, (), "valid-replication-keys", [])
-
-        # Field-level inclusion
         for field_name, field_schema in schema.get("properties").items():
             inclusion = "available"
+
             if field_name in self.KEY_PROPERTIES:
                 inclusion = "automatic"
+
             mdata = meta.write(
                 mdata, ("properties", field_name), "inclusion", inclusion
             )
@@ -114,8 +103,10 @@ class Base:
     def transform_record(self, record):
         with singer.Transformer() as tx:
             metadata = {}
+
             if self.catalog.metadata is not None:
                 metadata = meta.to_map(self.catalog.metadata)
+
             return tx.transform(record, self.catalog.schema.to_dict(), metadata)
 
     def write_schema(self):
@@ -133,6 +124,7 @@ class Base:
         )
 
         self.write_schema()
+
         return self.sync_data()
 
     def sync_data(self, substreams=None):
@@ -140,15 +132,21 @@ class Base:
             substreams = []
 
         table = self.TABLE
+
         url = self.get_url()
+
         result = self.client.make_request(url, self.API_METHOD)
+
         data = self.get_stream_data(result)
 
         with singer.metrics.record_counter(endpoint=table) as counter:
             for index, obj in enumerate(data):
                 LOGGER.debug("On {} of {}".format(index, len(data)))
+
                 singer.write_records(table, [self.transform_record(obj)])
+
                 counter.increment()
+
                 for substream in substreams:
                     substream.sync_data(parent=obj)
 

@@ -1,5 +1,6 @@
 from tap_ebay.streams.base import BaseStream
 import singer
+from singer import metadata as meta
 
 LOGGER = singer.get_logger()  # noqa
 
@@ -9,6 +10,7 @@ class OrdersStream(BaseStream):
     TABLE = 'orders'
     KEY_PROPERTIES = ['orderId']
 
+    # Keep the class consistent with the catalog we emit
     REPLICATION_METHOD = "FULL_TABLE"
     REPLICATION_KEYS = []
     FORCED_REPLICATION_METHOD = "FULL_TABLE"
@@ -22,3 +24,20 @@ class OrdersStream(BaseStream):
             self.transform_record(record)
             for record in result['orders']
         ]
+
+    # ---- Minimal, stream-local change: force replication only for this stream
+    def generate_catalog(self):
+        entries = super().generate_catalog()   # base returns a 1-item list for this stream
+        entry = entries[0]
+
+        # Convert metadata to a map, update root, write back
+        m = meta.to_map(entry["metadata"])
+        root = m.get((), {})
+        root["inclusion"] = root.get("inclusion", "available")
+        root["replication-method"] = "FULL_TABLE"
+        root["forced-replication-method"] = "FULL_TABLE"
+        root["valid-replication-keys"] = []
+        m[()] = root
+
+        entry["metadata"] = meta.to_list(m)
+        return entries
