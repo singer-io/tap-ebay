@@ -35,6 +35,7 @@ class Base:
         self.catalog = catalog
         self.client = client
         self.substreams = []
+        self.state_filter = getattr(self, "state_filter", None)
 
     def get_class_path(self):
         return os.path.dirname(inspect.getfile(self.__class__))
@@ -77,6 +78,12 @@ class Base:
         mdata = meta.new()
 
         mdata = meta.write(mdata, (), "inclusion", "available")
+        if not self.state_filter:
+            mdata = meta.write(mdata, (), "forced-replication-method", "FULL_TABLE")
+        if hasattr(self, "parent_stream") and getattr(self, "parent_stream"):
+            mdata = meta.write(
+                mdata, (), "parent-tap-stream-id", self.parent_stream.TABLE
+            )
 
         for field_name, field_schema in schema.get("properties").items():
             inclusion = "available"

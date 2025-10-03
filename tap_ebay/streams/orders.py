@@ -1,6 +1,6 @@
+
 from tap_ebay.streams.base import BaseStream
 import singer
-from singer import metadata as meta
 
 LOGGER = singer.get_logger()  # noqa
 
@@ -11,11 +11,6 @@ class OrdersStream(BaseStream):
     KEY_PROPERTIES = ['orderId']
     REPLICATION_METHOD = "FULL_TABLE"
 
-  
-    REPLICATION_METHOD = "FULL_TABLE"
-    REPLICATION_KEYS = []
-    FORCED_REPLICATION_METHOD = "FULL_TABLE"
-
     @property
     def path(self):
         return '/sell/fulfillment/v1/order'
@@ -25,20 +20,3 @@ class OrdersStream(BaseStream):
             self.transform_record(record)
             for record in result['orders']
         ]
-
-    # Minimal, stream-level change
-    def generate_catalog(self):
-        entries = super().generate_catalog()
-        entry = entries[0]
-
-        # Convert metadata to a map
-        m = meta.to_map(entry["metadata"])
-        root = m.get((), {})
-        root["inclusion"] = root.get("inclusion", "available")
-        root["replication-method"] = "FULL_TABLE"
-        root["forced-replication-method"] = "FULL_TABLE"
-        root["valid-replication-keys"] = []
-        m[()] = root
-
-        entry["metadata"] = meta.to_list(m)
-        return entries
