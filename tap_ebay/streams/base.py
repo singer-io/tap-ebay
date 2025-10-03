@@ -35,7 +35,6 @@ class Base:
         self.catalog = catalog
         self.client = client
         self.substreams = []
-        self.state_filter = getattr(self, "state_filter", None)
 
     def get_class_path(self):
         return os.path.dirname(inspect.getfile(self.__class__))
@@ -78,8 +77,11 @@ class Base:
         mdata = meta.new()
 
         mdata = meta.write(mdata, (), "inclusion", "available")
-        if not self.state_filter:
+
+        if getattr(self, "REPLICATION_METHOD", None) != "INCREMENTAL":
             mdata = meta.write(mdata, (), "forced-replication-method", "FULL_TABLE")
+
+        # If the stream is a child, record the parent's TABLE as parent-tap-stream-id (if used)
         if hasattr(self, "parent_stream") and getattr(self, "parent_stream"):
             mdata = meta.write(
                 mdata, (), "parent-tap-stream-id", self.parent_stream.TABLE
