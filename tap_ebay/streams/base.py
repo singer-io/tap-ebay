@@ -82,10 +82,8 @@ class Base:
 
         for field_name, field_schema in schema.get("properties").items():
             inclusion = "available"
-
             if field_name in self.KEY_PROPERTIES:
                 inclusion = "automatic"
-
             mdata = meta.write(
                 mdata, ("properties", field_name), "inclusion", inclusion
             )
