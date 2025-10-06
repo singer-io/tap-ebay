@@ -78,12 +78,12 @@ class Base:
 
         mdata = meta.write(mdata, (), "inclusion", "available")
 
+        mdata = meta.write(mdata, (), "forced-replication-method", "FULL_TABLE")
+
         for field_name, field_schema in schema.get("properties").items():
             inclusion = "available"
-
             if field_name in self.KEY_PROPERTIES:
                 inclusion = "automatic"
-
             mdata = meta.write(
                 mdata, ("properties", field_name), "inclusion", inclusion
             )
