@@ -78,14 +78,7 @@ class Base:
 
         mdata = meta.write(mdata, (), "inclusion", "available")
 
-        if getattr(self, "REPLICATION_METHOD", None) != "INCREMENTAL":
-            mdata = meta.write(mdata, (), "forced-replication-method", "FULL_TABLE")
-
-        # If the stream is a child, record the parent's TABLE as parent-tap-stream-id (if used)
-        if hasattr(self, "parent_stream") and getattr(self, "parent_stream"):
-            mdata = meta.write(
-                mdata, (), "parent-tap-stream-id", self.parent_stream.TABLE
-            )
+        mdata = meta.write(mdata, (), "forced-replication-method", "FULL_TABLE")
 
         for field_name, field_schema in schema.get("properties").items():
             inclusion = "available"
