@@ -16,7 +16,7 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
-            pylintd_key -d 'arguments-differ,logging-format-interpolation,missing-class-docstring,missing-function-docstring,missing-module-docstring,no-member,no-self-use,too-many-arguments,unused-argument,unused-import,wrong-import-order' tap_ebay
+            pylint tap_ebay -d C,R,W
 workflows:
   version: 2
   commit:
