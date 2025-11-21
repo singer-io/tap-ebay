@@ -54,13 +54,13 @@ class Base:
         Given a result set from Campaign Monitor, return the data
         to be persisted for this stream.
         """
-        raise RuntimeError("get_stream_data not implemented!")
+        raise NotImplementedError("get_stream_data not implemented!")
 
     def get_url(self):
         """
         Return the URL to hit for data from this stream.
         """
-        raise RuntimeError("get_url not implemented!")
+        raise NotImplementedError("get_url not implemented!")
 
     @classmethod
     def requirements_met(cls, catalog):
@@ -151,6 +151,14 @@ class Base:
 
 class BaseStream(Base):
     KEY_PROPERTIES = ['id']
+    
+    @property
+    def path(self):
+        """
+        Return the API path for this stream.
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement the 'path' property")
 
     def get_url(self):
         return 'https://api.ebay.com{}'.format(self.path)
