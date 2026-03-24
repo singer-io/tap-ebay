@@ -1,20 +1,164 @@
+import os.path
+import inspect
 import singer
 import singer.utils
 import singer.metrics
-
-from dateutil.parser import parse
-from tap_ebay.config import get_config_start_date
-from tap_ebay.state import incorporate, save_state, \
-    get_last_record_value_for_table
-
-from tap_framework.streams import BaseStream as base
+from singer import metadata as meta
 
 
 LOGGER = singer.get_logger()
 
 
-class BaseStream(base):
+def is_stream_selected(stream):
+    stream_metadata = meta.to_map(stream.metadata)
+
+    selected = meta.get(stream_metadata, (), "selected")
+    inclusion = meta.get(stream_metadata, (), "inclusion")
+    if inclusion == "unsupported":
+        return False
+    if selected is not None:
+        return selected
+
+    return inclusion == "automatic"
+
+
+class Base:
+    # GLOBAL PROPERTIES
+    TABLE = None
+    KEY_PROPERTIES = []
+    API_METHOD = "GET"
+    REQUIRES = []
+
+    def __init__(self, config, state, catalog, client):
+        self.config = config
+        self.state = state
+        self.catalog = catalog
+        self.client = client
+        self.substreams = []
+
+    def get_class_path(self):
+        return os.path.dirname(inspect.getfile(self.__class__))
+
+    def load_schema_by_name(self, name):
+        return singer.utils.load_json(
+            os.path.normpath(
+                os.path.join(self.get_class_path(), "../schemas/{}.json".format(name))
+            )
+        )
+
+    def get_schema(self):
+        return self.load_schema_by_name(self.TABLE)
+
+    def get_stream_data(self, result):
+        """
+        Given a result set from Campaign Monitor, return the data
+        to be persisted for this stream.
+        """
+        raise NotImplementedError("get_stream_data not implemented!")
+
+    def get_url(self):
+        """
+        Return the URL to hit for data from this stream.
+        """
+        raise NotImplementedError("get_url not implemented!")
+
+    @classmethod
+    def requirements_met(cls, catalog):
+        selected_streams = [s.stream for s in catalog.streams if is_stream_selected(s)]
+
+        return set(cls.REQUIRES).issubset(selected_streams)
+
+    @classmethod
+    def matches_catalog(cls, stream_catalog):
+        return stream_catalog.stream == cls.TABLE
+
+    def generate_catalog(self):
+        schema = self.get_schema()
+        mdata = meta.new()
+
+        mdata = meta.write(mdata, (), "inclusion", "available")
+
+        for field_name, field_schema in schema.get("properties").items():
+            inclusion = "available"
+
+            if field_name in self.KEY_PROPERTIES:
+                inclusion = "automatic"
+
+            mdata = meta.write(
+                mdata, ("properties", field_name), "inclusion", inclusion
+            )
+
+        return [
+            {
+                "tap_stream_id": self.TABLE,
+                "stream": self.TABLE,
+                "key_properties": self.KEY_PROPERTIES,
+                "schema": self.get_schema(),
+                "metadata": meta.to_list(mdata),
+            }
+        ]
+
+    def transform_record(self, record):
+        with singer.Transformer() as tx:
+            metadata = {}
+
+            if self.catalog.metadata is not None:
+                metadata = meta.to_map(self.catalog.metadata)
+
+            return tx.transform(record, self.catalog.schema.to_dict(), metadata)
+
+    def write_schema(self):
+        singer.write_schema(
+            self.catalog.stream,
+            self.catalog.schema.to_dict(),
+            key_properties=self.catalog.key_properties,
+        )
+
+    def sync(self):
+        LOGGER.info(
+            "Syncing stream {} with {}".format(
+                self.catalog.tap_stream_id, self.__class__.__name__
+            )
+        )
+
+        self.write_schema()
+
+        return self.sync_data()
+
+    def sync_data(self, substreams=None):
+        if substreams is None:
+            substreams = []
+
+        table = self.TABLE
+
+        url = self.get_url()
+
+        result = self.client.make_request(url, self.API_METHOD)
+
+        data = self.get_stream_data(result)
+
+        with singer.metrics.record_counter(endpoint=table) as counter:
+            for index, obj in enumerate(data):
+                LOGGER.debug("On {} of {}".format(index, len(data)))
+
+                singer.write_records(table, [self.transform_record(obj)])
+
+                counter.increment()
+
+                for substream in substreams:
+                    substream.sync_data(parent=obj)
+
+
+class BaseStream(Base):
     KEY_PROPERTIES = ['id']
+    
+    @property
+    def path(self):
+        """
+        Return the API path for this stream.
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement the 'path' property")
 
     def get_url(self):
         return 'https://api.ebay.com{}'.format(self.path)
@@ -33,53 +177,5 @@ class BaseStream(base):
             'offset': offset
         }
 
-    def sync_data(self):
-        table = self.TABLE
-
-        date = get_last_record_value_for_table(self.state, table)
-
-        if date is None:
-            date = get_config_start_date(self.config)
-
-        LOGGER.info('Syncing data from {}'.format(date.isoformat()))
-        url = self.get_url()
-
-        offset = 0
-        limit = 100
-        page = 0
-
-        while True:
-            LOGGER.info("Syncing page {} for stream {}".format(page, table))
-            params = self.get_params(date, offset, limit)
-            result = self.client.make_request(url, self.API_METHOD,
-                                              params=params)
-
-            data = self.get_stream_data(result)
-
-            with singer.metrics.record_counter(endpoint=table) as counter:
-                singer.write_records(table, data)
-                counter.increment(len(data))
-
-            if len(data) > 0:
-                last_record = data[-1]
-                last_record_date = last_record['lastModifiedDate']
-
-                self.state = incorporate(self.state,
-                                         table,
-                                         'last_record',
-                                         last_record_date)
-
-            save_state(self.state)
-
-            page += 1
-            offset += limit
-            if offset > result['total']:
-                break
-
-        return self.state
-
     def get_stream_data(self, result):
-        return [
-            self.transform_record(record)
-            for record in result
-        ]
+        return [self.transform_record(record) for record in result]
