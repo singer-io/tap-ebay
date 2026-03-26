@@ -10,14 +10,40 @@ jobs:
           command: |
             uv venv --python 3.12 /usr/local/share/virtualenvs/tap-ebay
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
-            uv pip install -U 'pip<19.2' 'setuptools<51.0.0'
+            uv pip install -U setuptools
             uv pip install .[dev]
-            uv pip install pylint
+      - run:
+          name: 'JSON Validator'
+          command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            stitch-validate-json tap_ebay/schemas/*.json
       - run:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
+            uv pip install pylint
             pylint tap_ebay -d C,R,W
+      - run:
+          name: 'Unit Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-ebay/bin/activate
+            uv pip install pytest coverage
+            coverage run -m pytest tests/unittests
+            coverage html
+          when: always
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
+      - run:
+          name: 'Integration Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            uv pip install --upgrade awscli
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+            source dev_env.sh
+            unset USE_STITCH_BACKEND
+            run-test --tap=tap-ebay tests
 workflows:
   version: 2
   commit:
