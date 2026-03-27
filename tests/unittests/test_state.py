@@ -134,8 +134,7 @@ class TestSaveState(unittest.TestCase):
 
     @patch('tap_ebay.state.singer.write_state')
     def test_save_state_does_nothing_for_empty_dict(self, mock_write):
-        """save_state({}) calls singer.write_state (falsy dict is still truthy for empty dict)."""
-        # {} is falsy in a boolean context — state module checks `if not state`
+        """save_state({}) is a no-op because an empty dict is falsy and skipped by `if not state`"""
         save_state({})
         mock_write.assert_not_called()
 
