@@ -22,7 +22,5 @@ class TapEbayPaginationTest(PaginationTest, TapEbayBaseTest):
     def streams_to_test(self):
         # Exclude streams that don't have enough test data to exceed one page.
         # If the eBay sandbox account has ≤50 orders, uncomment the exclusion below.
-        streams_to_exclude = {
-            "orders",  # eBay sandbox typically has fewer than API_LIMIT (50) orders
-        }
+        streams_to_exclude = set()
         return self.expected_stream_names().difference(streams_to_exclude)

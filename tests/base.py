@@ -22,7 +22,7 @@ class TapEbayBaseTest(BaseCase):
         """The Stitch connection type slug."""
         return "platform.ebay"
 
-    def setUp(self):
+    def setUp(self, **kwargs):
         missing = [
             v for v in [
                 "TAP_EBAY_CLIENT_ID",
