@@ -5,6 +5,7 @@ import singer.utils
 import singer.metrics
 from singer import metadata as meta
 
+from tap_ebay.client import PROD_API_BASE, SANDBOX_API_BASE
 
 LOGGER = singer.get_logger()
 
@@ -151,7 +152,7 @@ class Base:
 
 class BaseStream(Base):
     KEY_PROPERTIES = ['id']
-    
+
     @property
     def path(self):
         """
@@ -161,7 +162,8 @@ class BaseStream(Base):
         raise NotImplementedError("Subclasses must implement the 'path' property")
 
     def get_url(self):
-        return 'https://api.ebay.com{}'.format(self.path)
+        base = SANDBOX_API_BASE if self.config.get('sandbox', False) else PROD_API_BASE
+        return '{}{}'.format(base, self.path)
 
     def get_schema(self):
         schema = self.load_schema_by_name(self.TABLE)
