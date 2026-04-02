@@ -6,6 +6,7 @@ import sys
 import unittest
 from io import StringIO
 from unittest.mock import MagicMock, patch
+from urllib.parse import urlparse
 
 from singer import metadata as meta
 
@@ -107,9 +108,11 @@ class TestOrdersStreamAttributes(unittest.TestCase):
         self.assertEqual(stream.path, '/sell/fulfillment/v1/order')
 
     def test_get_url_starts_with_ebay_api_base(self):
-        """get_url() returns a URL starting with the eBay API base."""
+        """get_url() returns a URL with scheme https and hostname api.ebay.com."""
         stream = OrdersStream({'start_date': '2024-01-01T00:00:00Z'}, {}, None, None)
-        self.assertTrue(stream.get_url().startswith('https://api.ebay.com'))
+        parsed = urlparse(stream.get_url())
+        self.assertEqual(parsed.scheme, 'https')
+        self.assertEqual(parsed.hostname, 'api.ebay.com')
 
     def test_get_url_contains_fulfillment_path(self):
         """get_url() includes the fulfillment v1 order path."""
