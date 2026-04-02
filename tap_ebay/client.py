@@ -1,16 +1,17 @@
 import backoff
 import base64
 import requests
-import requests.auth
 from requests.exceptions import ConnectionError
 import singer
-import singer.metrics
-import time
 
 
 LOGGER = singer.get_logger()  # noqa
 
-AUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token"
+PROD_AUTH_URL    = "https://api.ebay.com/identity/v1/oauth2/token"
+SANDBOX_AUTH_URL = "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
+
+PROD_API_BASE    = 'https://api.ebay.com'
+SANDBOX_API_BASE = 'https://api.sandbox.ebay.com'
 
 
 class Server5xxError(Exception):
@@ -24,6 +25,9 @@ class EbayClient:
         self.access_token = self.authorize()
 
     def authorize(self):
+        is_sandbox = self.config.get('sandbox', False)
+        auth_url = SANDBOX_AUTH_URL if is_sandbox else PROD_AUTH_URL
+
         client = "{}:{}".format(self.config.get('client_id'),
                                 self.config.get('client_secret'))
         auth = base64.b64encode(client.encode()).decode()
@@ -41,7 +45,7 @@ class EbayClient:
         }
 
         response = requests.request("POST",
-                                    AUTH_URL,
+                                    auth_url,
                                     data=data,
                                     headers=headers)
 
@@ -59,13 +63,13 @@ class EbayClient:
         (ConnectionError, Server5xxError),
         max_tries=5,
     )
-    def make_request(self, AUTH_URL, method, params=None, body=None):
+    def make_request(self, url, method, params=None, body=None):
 
-        LOGGER.info("Making {} request to {}".format(method, AUTH_URL))
+        LOGGER.info("Making {} request to {}".format(method, url))
 
         resp = requests.request(
             method,
-            AUTH_URL,
+            url,
             headers={
                 'Authorization': "Bearer {}".format(self.access_token),
                 'Content-Type': 'application/json',

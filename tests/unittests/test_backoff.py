@@ -21,13 +21,13 @@ class TestEbayClient(unittest.TestCase):
         }
 
         # Patch the authorize() call inside __init__
-        patcher = mock.patch('requests.request')
+        patcher = mock.patch('tap_ebay.client.requests.request')
         self.addCleanup(patcher.stop)
         self.mock_request = patcher.start()
 
         mock_response = mock.Mock()
         mock_response.raise_for_status.return_value = None
-        mock_response.json.return_value = {"token": "fake_access_token"}
+        mock_response.json.return_value = {"access_token": "fake_access_token"}
         self.mock_request.return_value = mock_response
 
         self.client = EbayClient(self.config)
@@ -107,7 +107,7 @@ class TestEbayClient(unittest.TestCase):
         Test that the authorize method sets the access token from the response.
         """
         # Re-patch just for this isolated test
-        with mock.patch("requests.request") as mock_req:
+        with mock.patch("tap_ebay.client.requests.request") as mock_req:
             mock_response = mock.Mock()
             mock_response.raise_for_status.return_value = None
             mock_response.json.return_value = {"access_token": "mock_token"}
