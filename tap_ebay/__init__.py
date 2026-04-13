@@ -68,6 +68,8 @@ class EbayRunner:
 
         json.dump({"streams": catalog}, sys.stdout, indent=4)
 
+        LOGGER.info("Finished discovery.")
+
     def do_sync(self):
         LOGGER.info("Starting sync.")
 

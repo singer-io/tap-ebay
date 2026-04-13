@@ -76,26 +76,33 @@ class Base:
     def generate_catalog(self):
         schema = self.get_schema()
         mdata = meta.new()
+        mdata = meta.get_standard_metadata(
+            schema=schema,
+            key_properties=self.KEY_PROPERTIES,
+            replication_method=getattr(self, 'REPLICATION_METHOD', 'FULL_TABLE'),
+            valid_replication_keys=(getattr(self, "REPLICATION_KEYS", []) or []),
+        )
+        mdata = meta.to_map(mdata)
 
-        mdata = meta.write(mdata, (), "inclusion", "available")
+        automatic_keys = getattr(self, "REPLICATION_KEYS", []) or []
+        for field_name in schema.get("properties", {}).keys():
+            if field_name in automatic_keys:
+                mdata = meta.write(
+                    mdata, ("properties", field_name), "inclusion", "automatic"
+                )
 
-        for field_name, field_schema in schema.get("properties").items():
-            inclusion = "available"
+        parent_tap_stream_id = getattr(self, "PARENT", None)
+        if parent_tap_stream_id:
+            mdata = meta.write(mdata, (), 'parent-tap-stream-id', parent_tap_stream_id)
 
-            if field_name in self.KEY_PROPERTIES:
-                inclusion = "automatic"
-
-            mdata = meta.write(
-                mdata, ("properties", field_name), "inclusion", inclusion
-            )
-
+        mdata = meta.to_list(mdata)
         return [
             {
                 "tap_stream_id": self.TABLE,
                 "stream": self.TABLE,
                 "key_properties": self.KEY_PROPERTIES,
-                "schema": self.get_schema(),
-                "metadata": meta.to_list(mdata),
+                "schema": schema,
+                "metadata": mdata,
             }
         ]
 
