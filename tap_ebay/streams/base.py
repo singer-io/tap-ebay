@@ -75,7 +75,6 @@ class Base:
 
     def generate_catalog(self):
         schema = self.get_schema()
-        mdata = meta.new()
         mdata = meta.get_standard_metadata(
             schema=schema,
             key_properties=self.KEY_PROPERTIES,
