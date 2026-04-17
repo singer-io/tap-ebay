@@ -47,7 +47,7 @@
             "type": ["string", "null"]
         },
         "orderId": {
-            "type": "string"
+            "type": ["string", "null"]
         },
         "orderPaymentStatus": {
             "type": ["string", "null"]
