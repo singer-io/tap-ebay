@@ -16,6 +16,12 @@
         "ebayCollectAndRemitTax": {
             "type": ["boolean", "null"]
         },
+        "ebayCollectAndRemitTaxes": {
+            "type": ["array", "null"],
+            "items": {
+                "$ref": "#/definitions/EbayCollectAndRemitTax"
+            }
+        },
         "fulfillmentHrefs": {
             "type": "array",
             "items": {
@@ -29,9 +35,6 @@
             }
         },
         "lastModifiedDate": {
-            "type": ["string", "null"]
-        },
-        "legacyOrderId": {
             "type": ["string", "null"]
         },
         "lineItems": {
@@ -60,6 +63,15 @@
         },
         "sellerId": {
             "type": ["string", "null"]
+        },
+        "totalFeeBasisAmount": {
+            "$ref": "#/definitions/Amount"
+        },
+        "totalMarketplaceFee": {
+            "$ref": "#/definitions/Amount"
+        },
+        "program": {
+            "$ref": "#/definitions/OrderProgram"
         }
     },
     "definitions": {
@@ -125,6 +137,15 @@
             "properties": {
                 "username": {
                     "type": ["string", "null"]
+                },
+                "buyerRegistrationAddress": {
+                    "$ref": "#/definitions/ExtendedContact"
+                },
+                "taxAddress": {
+                    "$ref": "#/definitions/Address"
+                },
+                "taxIdentifier": {
+                    "$ref": "#/definitions/TaxIdentifier"
                 }
             }
         },
@@ -171,6 +192,12 @@
         "DeliveryCost": {
             "type":["object", "null"],
             "properties": {
+                "discountAmount": {
+                    "$ref": "#/definitions/Amount"
+                },
+                "handlingCost": {
+                    "$ref": "#/definitions/Amount"
+                },
                 "importCharges": {
                     "$ref": "#/definitions/Amount"
                 },
@@ -187,6 +214,12 @@
             "properties": {
                 "amount": {
                     "$ref": "#/definitions/Amount"
+                },
+                "collectionMethod": {
+                    "type": ["string", "null"]
+                },
+                "ebayReference": {
+                    "$ref": "#/definitions/NameValuePair"
                 },
                 "taxType": {
                     "type": ["string", "null"]
@@ -268,6 +301,12 @@
         "FulfillmentStartInstruction": {
             "type":["object", "null"],
             "properties": {
+                "appointment": {
+                    "$ref": "#/definitions/Appointment"
+                },
+                "destinationTimeZone": {
+                    "type": ["string", "null"]
+                },
                 "ebaySupportedFulfillment": {
                     "type": ["boolean", "null"]
                 },
@@ -382,12 +421,42 @@
                 },
                 "total": {
                     "$ref": "#/definitions/Amount"
+                },
+                "authenticityVerification": {
+                    "$ref": "#/definitions/AuthenticityVerificationProgram"
+                },
+                "itemLocation": {
+                    "$ref": "#/definitions/ItemLocation"
+                },
+                "variationAspects": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "$ref": "#/definitions/NameValuePair"
+                    }
+                },
+                "compatibilityProperties": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "$ref": "#/definitions/CompatibilityProperty"
+                    }
+                },
+                "ebayCollectedCharges": {
+                    "$ref": "#/definitions/EbayCollectedCharges"
+                },
+                "linkedOrderLineItems": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "$ref": "#/definitions/LinkedOrderLineItem"
+                    }
                 }
             }
         },
         "LineItemFulfillmentInstructions": {
             "type":["object", "null"],
             "properties": {
+                "destinationTimeZone": {
+                    "type": ["string", "null"]
+                },
                 "guaranteedDelivery": {
                     "type": ["boolean", "null"]
                 },
@@ -399,6 +468,9 @@
                 },
                 "shipByDate": {
                     "type": ["string", "null"]
+                },
+                "sourceTimeZone": {
+                    "type": ["string", "null"]
                 }
             }
         },
@@ -409,6 +481,9 @@
                     "type": ["boolean", "null"]
                 },
                 "fromBestOffer": {
+                    "type": ["boolean", "null"]
+                },
+                "soldAsLot": {
                     "type": ["boolean", "null"]
                 },
                 "soldViaAdCampaign": {
@@ -436,6 +511,9 @@
                 "refundDate": {
                     "type": ["string", "null"]
                 },
+                "refundId": {
+                    "type": ["string", "null"]
+                },
                 "refundReferenceId": {
                     "type": ["string", "null"]
                 }
@@ -448,6 +526,9 @@
                     "$ref": "#/definitions/Amount"
                 },
                 "refundDate": {
+                    "type": ["string", "null"]
+                },
+                "refundId": {
                     "type": ["string", "null"]
                 },
                 "refundReferenceId": {
@@ -561,7 +642,7 @@
                 "fee": {
                     "$ref": "#/definitions/Amount"
                 },
-                "priceDiscountSubtotal": {
+                "priceDiscount": {
                     "$ref": "#/definitions/Amount"
                 },
                 "priceSubtotal": {
@@ -668,6 +749,166 @@
             "properties": {
                 "amount": {
                     "$ref": "#/definitions/Amount"
+                },
+                "collectionMethod": {
+                    "type": ["string", "null"]
+                },
+                "taxType": {
+                    "type": ["string", "null"]
+                }
+            }
+        },
+        "TaxIdentifier": {
+            "type":["object", "null"],
+            "properties": {
+                "issuingCountry": {
+                    "type": ["string", "null"]
+                },
+                "taxIdentifierType": {
+                    "type": ["string", "null"]
+                },
+                "taxpayerId": {
+                    "type": ["string", "null"]
+                }
+            }
+        },
+        "ItemLocation": {
+            "type":["object", "null"],
+            "properties": {
+                "countryCode": {
+                    "type": ["string", "null"]
+                },
+                "location": {
+                    "type": ["string", "null"]
+                },
+                "postalCode": {
+                    "type": ["string", "null"]
+                }
+            }
+        },
+        "NameValuePair": {
+            "type":["object", "null"],
+            "properties": {
+                "name": {
+                    "type": ["string", "null"]
+                },
+                "value": {
+                    "type": ["string", "null"]
+                }
+            }
+        },
+        "AuthenticityVerificationProgram": {
+            "type":["object", "null"],
+            "properties": {
+                "description": {
+                    "type": ["string", "null"]
+                },
+                "outcome": {
+                    "type": ["string", "null"]
+                },
+                "outcomeReason": {
+                    "type": ["string", "null"]
+                },
+                "status": {
+                    "type": ["string", "null"]
+                }
+            }
+        },
+        "OrderProgram": {
+            "type":["object", "null"],
+            "properties": {
+                "authenticityVerification": {
+                    "$ref": "#/definitions/AuthenticityVerificationProgram"
+                },
+                "ebayInternationalShipping": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "returnsManagedBy": {
+                            "type": ["string", "null"]
+                        }
+                    }
+                },
+                "ebayShipping": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "shippingLabelProvidedBy": {
+                            "type": ["string", "null"]
+                        }
+                    }
+                },
+                "ebayVault": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "fulfillmentType": {
+                            "type": ["string", "null"]
+                        }
+                    }
+                },
+                "fulfillmentProgram": {
+                    "type": ["object", "null"],
+                    "properties": {
+                        "fulfilledBy": {
+                            "type": ["string", "null"]
+                        }
+                    }
+                }
+            }
+        },
+        "Appointment": {
+            "type": ["object", "null"],
+            "properties": {
+                "appointmentId": {"type": ["string", "null"]},
+                "appointmentStatus": {"type": ["string", "null"]},
+                "serviceType": {"type": ["string", "null"]}
+            }
+        },
+        "CompatibilityProperty": {
+            "type": ["object", "null"],
+            "properties": {
+                "propertyDisplayName": {"type": ["string", "null"]},
+                "propertyName": {"type": ["string", "null"]},
+                "propertyValue": {"type": ["string", "null"]}
+            }
+        },
+        "EbayCollectedCharges": {
+            "type": ["object", "null"],
+            "properties": {
+                "ebayShipping": {"$ref": "#/definitions/Amount"},
+                "charges": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "type": ["object", "null"],
+                        "properties": {
+                            "amount": {"$ref": "#/definitions/Amount"},
+                            "chargeType": {"type": ["string", "null"]}
+                        }
+                    }
+                }
+            }
+        },
+        "LinkedOrderLineItem": {
+            "type": ["object", "null"],
+            "properties": {
+                "lineItemId": {"type": ["string", "null"]},
+                "orderId": {"type": ["string", "null"]},
+                "sellerId": {"type": ["string", "null"]},
+                "title": {"type": ["string", "null"]},
+                "maxEstimatedDeliveryDate": {"type": ["string", "null"]},
+                "minEstimatedDeliveryDate": {"type": ["string", "null"]},
+                "lineItemAspects": {
+                    "type": ["array", "null"],
+                    "items": {"$ref": "#/definitions/NameValuePair"}
+                },
+                "shipments": {
+                    "type": ["array", "null"],
+                    "items": {
+                        "type": ["object", "null"],
+                        "properties": {
+                            "shipmentId": {"type": ["string", "null"]},
+                            "shippingCarrierCode": {"type": ["string", "null"]},
+                            "trackingNumber": {"type": ["string", "null"]}
+                        }
+                    }
                 }
             }
         }
