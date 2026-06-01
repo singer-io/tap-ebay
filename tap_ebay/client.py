@@ -18,6 +18,10 @@ class Server5xxError(Exception):
     pass
 
 
+class EbayForbiddenError(Exception):
+    pass
+
+
 class EbayClient:
 
     def __init__(self, config):
@@ -80,6 +84,10 @@ class EbayClient:
         )
         if 500 <= resp.status_code < 600:
             raise Server5xxError()
+        elif resp.status_code == 403:
+            raise EbayForbiddenError(
+                "HTTP-error-code: 403, Error: {}".format(resp.text)
+            )
         elif resp.status_code != 200:
             raise RuntimeError(resp.text)
         return resp.json()

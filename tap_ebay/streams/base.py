@@ -5,7 +5,7 @@ import singer.utils
 import singer.metrics
 from singer import metadata as meta
 
-from tap_ebay.client import PROD_API_BASE, SANDBOX_API_BASE
+from tap_ebay.client import PROD_API_BASE, SANDBOX_API_BASE, EbayForbiddenError
 
 LOGGER = singer.get_logger()
 
@@ -181,3 +181,19 @@ class BaseStream(Base):
 
     def get_stream_data(self, result):
         return [self.transform_record(record) for record in result]
+
+    def check_access(self):
+        """
+        Verify that the API credentials have read access to this stream.
+        Returns True if accessible, False if a 403 Forbidden error is raised.
+        """
+        url = self.get_url()
+        try:
+            self.client.make_request(url, self.API_METHOD, params={'limit': 1, 'offset': 0})
+            return True
+        except EbayForbiddenError:
+            LOGGER.warning(
+                "Stream '%s' does not have read permission, excluding from catalog.",
+                self.TABLE,
+            )
+            return False
