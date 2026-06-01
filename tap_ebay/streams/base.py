@@ -192,8 +192,4 @@ class BaseStream(Base):
             self.client.make_request(url, self.API_METHOD, params={'limit': 1, 'offset': 0})
             return True
         except EbayForbiddenError:
-            LOGGER.warning(
-                "Stream '%s' does not have read permission, excluding from catalog.",
-                self.TABLE,
-            )
             return False
