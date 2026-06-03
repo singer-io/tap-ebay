@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 from requests.exceptions import ConnectionError
-from tap_ebay.client import EbayClient, Server5xxError
+from tap_ebay.client import EbayClient, Server5xxError, EbayForbiddenError
 
 
 AUTH_URL = "https://fake-api.ebay.com/identity/v1/oauth2/token"
@@ -57,18 +57,31 @@ class TestEbayClient(unittest.TestCase):
 
         self.assertEqual(self.mock_request.call_count, 6)
 
-    def test_make_request_non_200_raises_runtime_error(self):
+    def test_make_request_403_raises_forbidden_error(self):
         """
-        Test that non-200 non-5xx responses raise a RuntimeError with error message.
+        Test that 403 responses raise EbayForbiddenError.
         """
         error_response = mock.Mock()
         error_response.status_code = 403
         error_response.text = "Forbidden"
         self.mock_request.return_value = error_response
 
+        with self.assertRaises(EbayForbiddenError) as context:
+            self.client.make_request("https://fake-api.ebay.com/some-endpoint", "GET")
+        self.assertIn("403", str(context.exception))
+
+    def test_make_request_non_200_raises_runtime_error(self):
+        """
+        Test that non-200 non-5xx non-403 responses raise a RuntimeError.
+        """
+        error_response = mock.Mock()
+        error_response.status_code = 400
+        error_response.text = "Bad Request"
+        self.mock_request.return_value = error_response
+
         with self.assertRaises(RuntimeError) as context:
             self.client.make_request("https://fake-api.ebay.com/some-endpoint", "GET")
-        self.assertIn("Forbidden", str(context.exception))
+        self.assertIn("Bad Request", str(context.exception))
 
     def test_make_request_with_params_and_body(self):
         """

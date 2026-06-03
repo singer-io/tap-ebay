@@ -4,7 +4,7 @@ import singer
 import json
 import sys
 
-from tap_ebay.client import EbayClient
+from tap_ebay.client import EbayClient, EbayForbiddenError
 from tap_ebay.streams import AVAILABLE_STREAMS
 from tap_ebay.streams.base import is_stream_selected
 from tap_ebay.state import save_state
@@ -62,9 +62,26 @@ class EbayRunner:
         LOGGER.info("Starting discovery.")
 
         catalog = []
+        inaccessible_streams = []
+
         for available_stream in self.available_streams:
-            stream = available_stream(self.config, self.state, None, None)
+            stream = available_stream(self.config, self.state, None, self.client)
+            if not stream.check_access():
+                inaccessible_streams.append(stream.TABLE)
+                continue
             catalog += stream.generate_catalog()
+
+        if inaccessible_streams:
+            if len(inaccessible_streams) == len(self.available_streams):
+                raise EbayForbiddenError(
+                    "HTTP-error-code: 403, Error: The account credentials supplied do not have 'read' access to any "
+                    "of the streams supported by the tap. Data collection cannot be initiated due to lack of permissions."
+                )
+            LOGGER.warning(
+                "The account credentials supplied do not have 'read' access to the following stream(s): %s. "
+                "These streams have been excluded from the catalog.",
+                ", ".join(inaccessible_streams),
+            )
 
         json.dump({"streams": catalog}, sys.stdout, indent=4)
 

@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='tap-ebay',
-      version='0.2.0',
+      version='0.3.0',
       description='Singer.io tap for extracting data from the Ebay API',
       author='Fishtown Analytics',
       url='http://fishtownanalytics.com',
@@ -12,7 +12,7 @@ setup(name='tap-ebay',
       install_requires=[
           "singer-python==6.8.0",
           "backoff==2.2.1",
-          "requests==2.33.0"
+          "requests==2.34.2"
       ],
       extras_require={
         'dev': [
