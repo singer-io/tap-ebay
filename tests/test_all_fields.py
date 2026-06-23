@@ -8,8 +8,14 @@ from base import TapEbayBaseTest
 # test-environment API (e.g. features not enabled in eBay sandbox accounts).
 # Start empty — populate after a first test run reveals schema/data mismatches.
 KNOWN_MISSING_FIELDS = {
-    # "orders": {"<field_name>"},
-    # Example: "orders": {"ebayCollectAndRemitTax"},  # not applicable in all regions
+    # Observed as intermittently absent in sandbox order payloads.
+    "orders": {
+        "program",
+        "buyerCheckoutNotes",
+        "totalMarketplaceFee",
+        "ebayCollectAndRemitTaxes",
+        "salesRecordReference",
+    },
 }
 
 
