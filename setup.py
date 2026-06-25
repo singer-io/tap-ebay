@@ -12,12 +12,12 @@ setup(name='tap-ebay',
       install_requires=[
           "singer-python==6.8.0",
           "backoff==2.2.1",
-          "requests==2.33.0"
+          "requests==2.34.2",
       ],
       extras_require={
         'dev': [
-            'ipdb==0.13.13',
-            'pylint==4.0.5',
+            'ipdb',
+            'pylint',
         ]
       },
       entry_points='''
