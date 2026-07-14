@@ -26,23 +26,24 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
-            uv pip install pytest coverage
-            coverage run -m pytest tests/unittests
+            mkdir -p test_output
+            export PYTHONPATH="$PWD"
+            pytest --cov=tap_ebay --cov-report=term-missing --junitxml=test_output/unittests.xml tests/unittests
             coverage html
           when: always
       - store_test_results:
-          path: test_output/report.xml
+          path: test_output
       - store_artifacts:
           path: htmlcov
-      # - run:
-      #     name: 'Integration Tests'
-      #     command: |
-      #       source /usr/local/share/virtualenvs/tap-tester/bin/activate
-      #       uv pip install --upgrade awscli
-      #       aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
-      #       source dev_env.sh
-      #       unset USE_STITCH_BACKEND
-      #       run-test --tap=tap-ebay tests
+      - run:
+          name: 'Integration Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            uv pip install --upgrade awscli
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+            source dev_env.sh
+            unset USE_STITCH_BACKEND
+            run-test --tap=tap-ebay tests
 workflows:
   version: 2
   commit:
