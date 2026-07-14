@@ -18,6 +18,9 @@ setup(name='tap-ebay',
         'dev': [
             'ipdb',
             'pylint',
+            'pytest',
+            'pytest-cov',
+            'coverage',
         ]
       },
       entry_points='''

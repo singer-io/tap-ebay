@@ -1,7 +1,9 @@
 """
 Unit tests for tap_ebay sync — EbayRunner orchestration, stream sync, and record output.
 """
+import runpy
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch, call
 
 from singer import metadata as meta
@@ -57,6 +59,29 @@ def _make_orders_stream(records=None):
     client = MagicMock()
     client.make_request.return_value = {'orders': records if records is not None else [{'orderId': 'order-1'}]}
     return OrdersStream(config, {}, catalog, client)
+
+
+class DummyBaseStreamWithPath(BaseStream):
+    TABLE = 'dummy'
+
+    @property
+    def path(self):
+        return '/dummy'
+
+
+class DummyBaseStreamWithoutPath(BaseStream):
+    TABLE = 'dummy'
+
+
+class DummyCatalogStream(BaseStream):
+    TABLE = 'dummy'
+    KEY_PROPERTIES = ['id']
+    REPLICATION_KEYS = ['updatedAt']
+    PARENT = 'parent-dummy'
+
+    @property
+    def path(self):
+        return '/dummy'
 
 
 # ---------------------------------------------------------------------------
@@ -281,6 +306,85 @@ class TestBaseSyncData(unittest.TestCase):
             stream.sync_data()
         mock_wr.assert_not_called()
 
+    @patch('singer.metrics.record_counter')
+    @patch('singer.write_records')
+    @patch('singer.write_schema')
+    def test_sync_data_passes_each_record_to_substream(self, mock_ws, mock_wr, mock_counter):
+        """sync_data() forwards each parent record to substreams."""
+        stream = _make_orders_stream(records=[{'orderId': 'r1'}])
+        substream = MagicMock()
+        with patch.object(stream, 'transform_record', side_effect=lambda r: r):
+            stream.sync_data(substreams=[substream])
+        substream.sync_data.assert_called_once_with(parent={'orderId': 'r1'})
+
+    def test_transform_record_uses_catalog_metadata_when_present(self):
+        """transform_record() includes catalog metadata when it exists."""
+        stream = _make_orders_stream()
+        metadata = meta.new()
+        metadata = meta.write(metadata, (), 'selected', True)
+        stream.catalog.metadata = meta.to_list(metadata)
+
+        with patch('tap_ebay.streams.base.singer.Transformer') as mock_transformer:
+            transformer = mock_transformer.return_value.__enter__.return_value
+            transformer.transform.return_value = {'orderId': 'converted'}
+
+            result = stream.transform_record({'orderId': 'raw'})
+
+        self.assertEqual(result, {'orderId': 'converted'})
+        transformer.transform.assert_called_once()
+        self.assertEqual(transformer.transform.call_args[0][2], meta.to_map(stream.catalog.metadata))
+
+    def test_generate_catalog_adds_parent_and_automatic_replication_metadata(self):
+        """generate_catalog() marks replication keys automatic and records parent stream id."""
+        stream = DummyCatalogStream({'sandbox': False}, {}, None, None)
+        schema = {
+            'type': 'object',
+            'properties': {
+                'id': {'type': 'string'},
+                'updatedAt': {'type': 'string'},
+                'name': {'type': 'string'},
+            },
+        }
+
+        with patch.object(stream, 'load_schema_by_name', return_value=schema):
+            catalog = stream.generate_catalog()
+
+        metadata = meta.to_map(catalog[0]['metadata'])
+        self.assertEqual(meta.get(metadata, ('properties', 'updatedAt'), 'inclusion'), 'automatic')
+        self.assertEqual(meta.get(metadata, (), 'parent-tap-stream-id'), 'parent-dummy')
+
+    def test_base_get_schema_delegates_to_load_schema(self):
+        """Base.get_schema() delegates to load_schema_by_name()."""
+        base = Base({}, {}, None, None)
+        expected_schema = {'type': 'object'}
+        with patch.object(base, 'load_schema_by_name', return_value=expected_schema):
+            self.assertEqual(base.get_schema(), expected_schema)
+
+    def test_base_get_stream_data_is_not_implemented(self):
+        """Base.get_stream_data() raises NotImplementedError."""
+        base = Base({}, {}, None, None)
+        with self.assertRaises(NotImplementedError):
+            base.get_stream_data([])
+
+    def test_base_get_url_is_not_implemented(self):
+        """Base.get_url() raises NotImplementedError."""
+        base = Base({}, {}, None, None)
+        with self.assertRaises(NotImplementedError):
+            base.get_url()
+
+    def test_base_stream_path_is_not_implemented(self):
+        """BaseStream.path raises NotImplementedError unless overridden."""
+        stream = DummyBaseStreamWithoutPath({}, {}, None, None)
+        with self.assertRaises(NotImplementedError):
+            _ = stream.path
+
+    def test_base_stream_get_stream_data_returns_transformed_list(self):
+        """BaseStream.get_stream_data() transforms every record in the input list."""
+        stream = DummyBaseStreamWithPath({}, {}, None, None)
+        with patch.object(stream, 'transform_record', side_effect=lambda r: {'id': r['id']}):
+            result = stream.get_stream_data([{'id': 'a'}, {'id': 'b'}])
+        self.assertEqual(result, [{'id': 'a'}, {'id': 'b'}])
+
 
 # ---------------------------------------------------------------------------
 # BaseStream filter / param helpers
@@ -347,6 +451,58 @@ class TestBaseStreamFilterAndParams(unittest.TestCase):
             {'start_date': '2024-01-01T00:00:00Z'}, {}, None, None
         )
         self.assertNotIn('sandbox', stream.get_url())
+
+
+class TestMainEntrypoint(unittest.TestCase):
+    """Tests for tap_ebay.__init__.main() and the script entrypoint guard."""
+
+    @patch('tap_ebay.EbayClient')
+    @patch('tap_ebay.EbayRunner')
+    @patch('singer.utils.parse_args')
+    def test_main_calls_do_discover_when_discover_flag_is_set(self, mock_parse_args, mock_runner_cls, mock_client_cls):
+        """main() dispatches to do_discover() when args.discover is true."""
+        args = MagicMock()
+        args.config = {'start_date': '2024-01-01T00:00:00Z'}
+        args.state = {}
+        args.discover = True
+        args.catalog = False
+        mock_parse_args.return_value = args
+
+        import tap_ebay
+        tap_ebay.main()
+
+        mock_runner_cls.return_value.do_discover.assert_called_once()
+
+    @patch('tap_ebay.EbayClient')
+    @patch('tap_ebay.EbayRunner')
+    @patch('singer.utils.parse_args')
+    def test_main_calls_do_sync_when_catalog_flag_is_set(self, mock_parse_args, mock_runner_cls, mock_client_cls):
+        """main() dispatches to do_sync() when args.catalog is true."""
+        args = MagicMock()
+        args.config = {'start_date': '2024-01-01T00:00:00Z'}
+        args.state = {}
+        args.discover = False
+        args.catalog = True
+        mock_parse_args.return_value = args
+
+        import tap_ebay
+        tap_ebay.main()
+
+        mock_runner_cls.return_value.do_sync.assert_called_once()
+
+    @patch('tap_ebay.save_state')
+    def test_do_sync_exits_with_oserror_errno(self, mock_save_state):
+        """do_sync() exits with the OSError errno when a stream sync fails."""
+        mock_stream = MagicMock()
+        mock_stream.state = {}
+        mock_stream.TABLE = 'orders'
+        mock_stream.sync.side_effect = OSError(13, 'permission denied')
+        runner = self._runner_with_mock_streams([mock_stream])
+
+        with patch('builtins.exit') as mock_exit:
+            runner.do_sync()
+
+        mock_exit.assert_called_once_with(13)
 
 
 if __name__ == '__main__':
