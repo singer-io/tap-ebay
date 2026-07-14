@@ -476,10 +476,14 @@ class TestMainEntrypoint(unittest.TestCase):
         mock_parse_args.return_value = args
 
         fake_client_module = types.ModuleType('tap_ebay.client')
+        fake_client_module.PROD_API_BASE = 'https://api.ebay.com'
+        fake_client_module.SANDBOX_API_BASE = 'https://api.sandbox.ebay.com'
         fake_client_module.EbayClient = MagicMock()
         module_path = Path(__file__).resolve().parents[2] / 'tap_ebay' / '__init__.py'
         with patch.dict(sys.modules, {'tap_ebay.client': fake_client_module}):
             runpy.run_path(str(module_path), run_name='__main__')
+
+        mock_parse_args.assert_called_once()
 
     @patch('tap_ebay.EbayClient')
     @patch('tap_ebay.EbayRunner')
@@ -524,9 +528,12 @@ class TestMainEntrypoint(unittest.TestCase):
         mock_stream.sync.side_effect = OSError(13, 'permission denied')
         runner = _make_runner_with_mock_streams([mock_stream])
 
-        with patch('builtins.exit') as mock_exit:
-            runner.do_sync()
+        with patch('builtins.exit', side_effect=SystemExit(13)) as mock_exit:
+            with self.assertRaises(SystemExit) as cm:
+                runner.do_sync()
 
+        self.assertEqual(cm.exception.code, 13)
+        mock_save_state.assert_not_called()
         mock_exit.assert_called_once_with(13)
 
 
