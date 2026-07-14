@@ -27,6 +27,7 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-ebay/bin/activate
             mkdir -p test_output
+            export PYTHONPATH="$PWD"
             pytest --cov=tap_ebay --cov-report=term-missing --junitxml=test_output/unittests.xml tests/unittests
             coverage html
           when: always
