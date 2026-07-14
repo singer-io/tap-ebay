@@ -2,14 +2,17 @@
 Unit tests for tap_ebay sync — EbayRunner orchestration, stream sync, and record output.
 """
 import runpy
+import sys
 import unittest
 from pathlib import Path
+import types
 from unittest.mock import MagicMock, patch, call
 
 from singer import metadata as meta
 
 from tap_ebay import EbayRunner
 from tap_ebay.streams import AVAILABLE_STREAMS
+from tap_ebay.streams.base import Base
 from tap_ebay.streams.base import BaseStream
 from tap_ebay.streams.orders import OrdersStream
 
@@ -59,6 +62,13 @@ def _make_orders_stream(records=None):
     client = MagicMock()
     client.make_request.return_value = {'orders': records if records is not None else [{'orderId': 'order-1'}]}
     return OrdersStream(config, {}, catalog, client)
+
+
+def _make_runner_with_mock_streams(stream_list, state=None):
+    args = _make_args(state=state or {})
+    runner = EbayRunner(args, MagicMock(), AVAILABLE_STREAMS)
+    runner.get_streams_to_replicate = MagicMock(return_value=stream_list)
+    return runner
 
 
 class DummyBaseStreamWithPath(BaseStream):
@@ -151,10 +161,7 @@ class TestDoSync(unittest.TestCase):
     """Tests for EbayRunner.do_sync() orchestration."""
 
     def _runner_with_mock_streams(self, stream_list, state=None):
-        args = _make_args(state=state or {})
-        runner = EbayRunner(args, MagicMock(), AVAILABLE_STREAMS)
-        runner.get_streams_to_replicate = MagicMock(return_value=stream_list)
-        return runner
+        return _make_runner_with_mock_streams(stream_list, state=state)
 
     @patch('tap_ebay.save_state')
     def test_do_sync_calls_sync_for_each_stream(self, mock_save):
@@ -459,6 +466,24 @@ class TestMainEntrypoint(unittest.TestCase):
     @patch('tap_ebay.EbayClient')
     @patch('tap_ebay.EbayRunner')
     @patch('singer.utils.parse_args')
+    def test_module_script_guard_executes_main(self, mock_parse_args, mock_runner_cls, mock_client_cls):
+        """Executing tap_ebay/__init__.py as a script reaches the __main__ guard."""
+        args = MagicMock()
+        args.config = {'start_date': '2024-01-01T00:00:00Z'}
+        args.state = {}
+        args.discover = True
+        args.catalog = False
+        mock_parse_args.return_value = args
+
+        fake_client_module = types.ModuleType('tap_ebay.client')
+        fake_client_module.EbayClient = MagicMock()
+        module_path = Path(__file__).resolve().parents[2] / 'tap_ebay' / '__init__.py'
+        with patch.dict(sys.modules, {'tap_ebay.client': fake_client_module}):
+            runpy.run_path(str(module_path), run_name='__main__')
+
+    @patch('tap_ebay.EbayClient')
+    @patch('tap_ebay.EbayRunner')
+    @patch('singer.utils.parse_args')
     def test_main_calls_do_discover_when_discover_flag_is_set(self, mock_parse_args, mock_runner_cls, mock_client_cls):
         """main() dispatches to do_discover() when args.discover is true."""
         args = MagicMock()
@@ -497,7 +522,7 @@ class TestMainEntrypoint(unittest.TestCase):
         mock_stream.state = {}
         mock_stream.TABLE = 'orders'
         mock_stream.sync.side_effect = OSError(13, 'permission denied')
-        runner = self._runner_with_mock_streams([mock_stream])
+        runner = _make_runner_with_mock_streams([mock_stream])
 
         with patch('builtins.exit') as mock_exit:
             runner.do_sync()
