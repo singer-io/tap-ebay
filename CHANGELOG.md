@@ -1,5 +1,5 @@
 ## 0.3.0
-  * Bump dependency versions for requests.[#17](https://github.com/singer-io/tap-ebay/pull/17)
+  * Bump dependency versions for requests.[#18](https://github.com/singer-io/tap-ebay/pull/18)
 
 ## 0.2.0
   * Bump dependency versions for singer-python, requests. Added new unittest, integration test cases.[#13](https://github.com/singer-io/tap-ebay/pull/13)
